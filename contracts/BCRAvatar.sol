@@ -71,8 +71,6 @@ contract BCRAvatar is Ownable, ERC20 {
 		emit ServiceDonated(msg.sender, msg.value);
 	}
 
-	receive() external payable {}
-
 	function withdraw() public onlyOwner {
 		require(address(this).balance > 0, "Amount insufficient");
 		payable(owner()).transfer(address(this).balance);

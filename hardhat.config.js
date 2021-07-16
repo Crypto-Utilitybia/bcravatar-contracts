@@ -34,10 +34,12 @@ module.exports = {
     mainnet: {
       url: "https://mainnet.infura.io/v3/" + INFURA_ID,
       accounts: [`${privateKey}`],
+      saveDeployments: true,
     },
     rinkeby: {
       url: "https://rinkeby.infura.io/v3/" + INFURA_ID,
       accounts: [`${privateKey}`],
+      saveDeployments: true,
     },
     matic: {
       url: "https://rpc-mainnet.maticvigil.com",
@@ -53,24 +55,6 @@ module.exports = {
     compilers: [
       {
         version: "0.8.4",
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 200,
-          },
-        },
-      },
-      {
-        version: "0.6.6",
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 200,
-          },
-        },
-      },
-      {
-        version: "0.5.16",
         settings: {
           optimizer: {
             enabled: true,
