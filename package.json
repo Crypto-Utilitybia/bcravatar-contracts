@@ -11,12 +11,14 @@
     "test:coverage": "rm -rf abi && node --max-old-space-size=4096 ./node_modules/.bin/hardhat coverage --network hardhat",
     "test:gas": "REPORT_GAS=true npm run test",
     "deploy": "rm -rf abi && npx hardhat deploy --network localhost",
-    "deploy:matic": "rm -rf abi && npx hardhat deploy --network matic",
-    "verify:matic": "hardhat --network matic etherscan-verify",
-    "deploy:mainnet": "rm -rf abi && npx hardhat deploy --network mainnet",
-    "verify:mainnet": "hardhat --network mainnet etherscan-verify",
-    "deploy:rinkeby": "rm -rf abi && npx hardhat deploy --network rinkeby",
-    "verify:rinkeby": "hardhat --network rinkeby etherscan-verify"
+    "mainnet:deploy": "rm -rf abi && npx hardhat deploy --network mainnet",
+    "mainnet:verify": "hardhat --network mainnet etherscan-verify",
+    "rinkeby:deploy": "rm -rf abi && npx hardhat deploy --network rinkeby",
+    "rinkeby:verify": "hardhat --network rinkeby etherscan-verify",
+    "binance:deploy": "rm -rf abi && npx hardhat deploy --network binance",
+    "binance:verify": "hardhat --network binance etherscan-verify",
+    "matic:deploy": "rm -rf abi && npx hardhat deploy --network matic",
+    "matic:verify": "hardhat --network matic etherscan-verify"
   },
   "repository": {
     "type": "git",

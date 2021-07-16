@@ -1,7 +1,7 @@
 const func = async function (hre) {
-  const baseURI = `https://ipfs.io/ipfs/${process.env.IPFS_CID}/`;
+  const baseURI = `https://ipfs.io/ipfs/`;
   const { deployments, getNamedAccounts } = hre;
-  const { deploy } = deployments;
+  const { deploy, read, execute } = deployments;
   const { deployer } = await getNamedAccounts();
 
   await deploy("BCRAvatar", {
@@ -9,6 +9,30 @@ const func = async function (hre) {
     log: true,
     args: [baseURI],
   });
+
+  const hasAvatar = await read("BCRAvatar", "getAvatar", deployer);
+  if (!hasAvatar) {
+    await execute(
+      "BCRAvatar",
+      { from: deployer, log: true },
+      "setAvatar",
+      process.env.AVATAR_ID
+    );
+  } else {
+    console.log(`Avatar: ${hasAvatar}`);
+  }
+
+  const hasProfile = await read("BCRAvatar", "getProfile", deployer);
+  if (!hasProfile) {
+    await execute(
+      "BCRAvatar",
+      { from: deployer, log: true },
+      "setProfile",
+      process.env.PROFILE_ID
+    );
+  } else {
+    console.log(`Profile: ${hasProfile}`);
+  }
 };
 
 func.tags = ["BCRAvatar"];

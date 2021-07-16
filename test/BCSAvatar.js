@@ -4,7 +4,7 @@ const { ethers, getNamedAccounts, web3 } = require("hardhat");
 describe("BCRAvatar", function () {
   const info = {
     ZERO: "0x0000000000000000000000000000000000000000",
-    baseURI: `https://ipfs.io/ipfs/${process.env.IPFS_CID}/`,
+    baseURI: `https://ipfs.io/ipfs/`,
   };
 
   before(async function () {
@@ -12,7 +12,8 @@ describe("BCRAvatar", function () {
     info.deployer = namedAccounts.deployer;
     info.investor = namedAccounts.investor;
     info.investorSigner = await ethers.provider.getSigner(info.investor);
-    info.avatarId = Date.now();
+    info.avatarId = Date.now().toString();
+    info.profileId = (Date.now() + 1).toString();
   });
 
   it("Contract Deploy", async function () {
@@ -36,7 +37,7 @@ describe("BCRAvatar", function () {
       "AvatarCreated"
     );
     expect(await contract.getAvatar(deployer)).to.equal(
-      `${info.baseURI}${deployer.toLowerCase()}/${avatarId.toString()}`
+      `${info.baseURI}${avatarId.toString()}`
     );
     await expect(contract.setAvatar(avatarId)).to.be.revertedWith(
       "Account already registered"
@@ -44,7 +45,7 @@ describe("BCRAvatar", function () {
   });
 
   it("updateAvatar", async function () {
-    info.avatarIdNew = Date.now();
+    info.avatarIdNew = Date.now().toString();
     const {
       contract,
       deployer,
@@ -60,7 +61,43 @@ describe("BCRAvatar", function () {
       "AvatarUpdated"
     );
     expect(await contract.getAvatar(deployer)).to.equal(
-      `${info.baseURI}${deployer.toLowerCase()}/${avatarIdNew.toString()}`
+      `${info.baseURI}${avatarIdNew.toString()}`
+    );
+  });
+
+  it("setProfile && getProfile", async function () {
+    const { contract, deployer, profileId } = info;
+    expect(await contract.getProfile(deployer)).to.equal("");
+    await expect(contract.setProfile(profileId)).to.be.emit(
+      contract,
+      "ProfileCreated"
+    );
+    expect(await contract.getProfile(deployer)).to.equal(
+      `${info.baseURI}${profileId.toString()}`
+    );
+    await expect(contract.setProfile(profileId)).to.be.revertedWith(
+      "Account already registered"
+    );
+  });
+
+  it("updateProfile", async function () {
+    info.profileIdNew = Date.now().toString();
+    const {
+      contract,
+      deployer,
+      investorSigner: signer,
+      profileId,
+      profileIdNew,
+    } = info;
+    await expect(
+      contract.connect(signer).updateProfile(profileId)
+    ).to.be.revertedWith("Account not registered");
+    await expect(contract.updateProfile(profileIdNew)).to.be.emit(
+      contract,
+      "ProfileUpdated"
+    );
+    expect(await contract.getProfile(deployer)).to.equal(
+      `${info.baseURI}${profileIdNew.toString()}`
     );
   });
 
@@ -89,18 +126,19 @@ describe("BCRAvatar", function () {
     expect(await contract.getAvatar(deployer)).to.equal(avatarNFT);
     await mockNFT.transferFrom(deployer, info.investor, 1);
     expect(await contract.getAvatar(deployer)).to.equal(
-      `${info.baseURI}${deployer.toLowerCase()}/${avatarIdNew.toString()}`
+      `${info.baseURI}${avatarIdNew.toString()}`
     );
   });
 
   it("donate && withdraw", async function () {
-    const { contract, investorSigner: signer } = info;
+    const { contract, investorSigner: signer, investor } = info;
     await expect(
       contract.connect(signer).donate({ value: web3.utils.toWei("1") })
     ).to.be.emit(contract, "ServiceDonated");
     expect(await web3.eth.getBalance(contract.address)).to.equal(
       web3.utils.toWei("1")
     );
+    expect(await contract.balanceOf(investor)).to.equal(web3.utils.toWei("1"));
     await expect(contract.connect(signer).withdraw()).to.be.reverted;
     await contract.withdraw();
   });

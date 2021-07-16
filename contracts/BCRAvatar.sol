@@ -14,13 +14,16 @@ contract BCRAvatar is Ownable, ERC20 {
 
 	event AvatarCreated(address indexed account, string avatarURI);
 	event AvatarUpdated(address indexed account, string avatarURI);
+	event ProfileCreated(address indexed account, string profileURI);
+	event ProfileUpdated(address indexed account, string profileURI);
 	event NFTRegistered(address indexed account, AvatarNFT nft);
 	event ServiceDonated(address indexed account, uint256 amount);
 
 	string public baseURI;
 	mapping(address => uint256) public donations;
 
-	mapping(address => uint256) private avatars;
+	mapping(address => string) private avatars;
+	mapping(address => string) private profiles;
 	mapping(address => AvatarNFT) private avatarNFTs;
 
 	constructor(string memory _baseURI) ERC20("Blockchain Registered Avatar", "BCRA") {
@@ -31,9 +34,9 @@ contract BCRAvatar is Ownable, ERC20 {
 		baseURI = _baseURI;
 	}
 
-	function setAvatar(uint256 avatarId) public {
-		require(avatars[msg.sender] == 0, "Account already registered");
-		avatars[msg.sender] = avatarId;
+	function setAvatar(string memory avatarHash) public {
+		require(bytes(avatars[msg.sender]).length == 0, "Account already registered");
+		avatars[msg.sender] = avatarHash;
 		emit AvatarCreated(msg.sender, getAvatar(msg.sender));
 	}
 
@@ -45,17 +48,37 @@ contract BCRAvatar is Ownable, ERC20 {
 				return IERC721Metadata(_contract).tokenURI(tokenId);
 			}
 		}
-		if (avatars[account] > 0) {
-			return string(abi.encodePacked(baseURI, toAsciiString(account), "/", Strings.toString(avatars[account])));
+		if (bytes(avatars[account]).length > 0) {
+			return string(abi.encodePacked(baseURI, avatars[account]));
 		} else {
 			return "";
 		}
 	}
 
-	function updateAvatar(uint256 avatarId) public {
-		require(avatars[msg.sender] != 0, "Account not registered");
-		avatars[msg.sender] = avatarId;
+	function updateAvatar(string memory avatarHash) public {
+		require(bytes(avatars[msg.sender]).length != 0, "Account not registered");
+		avatars[msg.sender] = avatarHash;
 		emit AvatarUpdated(msg.sender, getAvatar(msg.sender));
+	}
+
+	function setProfile(string memory profileHash) public {
+		require(bytes(profiles[msg.sender]).length == 0, "Account already registered");
+		profiles[msg.sender] = profileHash;
+		emit ProfileCreated(msg.sender, getProfile(msg.sender));
+	}
+
+	function getProfile(address account) public view returns (string memory) {
+		if (bytes(profiles[account]).length > 0) {
+			return string(abi.encodePacked(baseURI, profiles[account]));
+		} else {
+			return "";
+		}
+	}
+
+	function updateProfile(string memory profileHash) public {
+		require(bytes(profiles[msg.sender]).length != 0, "Account not registered");
+		profiles[msg.sender] = profileHash;
+		emit ProfileUpdated(msg.sender, getProfile(msg.sender));
 	}
 
 	function registerNFT(address _contract, uint256 tokenId) public {
@@ -66,7 +89,7 @@ contract BCRAvatar is Ownable, ERC20 {
 
 	function donate() public payable {
 		require(msg.value > 0, "Donation insufficient");
-		super._mint(msg.sender, 100 ether);
+		super._mint(msg.sender, msg.value);
 		donations[msg.sender] += msg.value;
 		emit ServiceDonated(msg.sender, msg.value);
 	}
@@ -74,20 +97,5 @@ contract BCRAvatar is Ownable, ERC20 {
 	function withdraw() public onlyOwner {
 		require(address(this).balance > 0, "Amount insufficient");
 		payable(owner()).transfer(address(this).balance);
-	}
-
-	function toAsciiString(address x) internal pure returns (string memory) {
-		bytes memory alphabet = "0123456789abcdef";
-		bytes memory s = new bytes(42);
-		s[0] = "0";
-		s[1] = "x";
-		for (uint256 i = 0; i < 20; i++) {
-			bytes1 b = bytes1(uint8(uint256(uint160(x)) / (2**(8 * (19 - i)))));
-			uint8 hi = uint8(uint8(b) / 16);
-			uint8 lo = uint8(uint8(b) - 16 * uint8(hi));
-			s[2 * i + 2] = alphabet[hi];
-			s[2 * i + 3] = alphabet[lo];
-		}
-		return string(s);
 	}
 }

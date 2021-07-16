@@ -41,6 +41,12 @@ module.exports = {
       accounts: [`${privateKey}`],
       saveDeployments: true,
     },
+    binance: {
+      url: "https://bsc-dataseed.binance.org/",
+      chainId: 56,
+      gasPrice: 20000000000,
+      deploy: ["deploy/binance"],
+    },
     matic: {
       url: "https://rpc-mainnet.maticvigil.com",
       accounts: [`${privateKey}`],
