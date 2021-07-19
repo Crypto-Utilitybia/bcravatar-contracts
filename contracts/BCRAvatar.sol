@@ -22,20 +22,13 @@ contract BCRAvatar is Ownable, ERC20 {
 	event NFTDeRegistered(address indexed account);
 	event ServiceDonated(address indexed account, uint256 amount);
 
-	string public baseURI;
-	mapping(address => uint256) public donations;
-
+	string public baseURI = "https://ipfs.io/ipfs/";
+	mapping(address => uint256) private donations;
 	mapping(address => string) private avatars;
 	mapping(address => string) private profiles;
-	mapping(address => AvatarNFT) private avatarNFTs;
+	mapping(address => AvatarNFT) public avatarNFTs;
 
-	constructor(string memory _baseURI) ERC20("Blockchain Registered Avatar", "BCRA") {
-		baseURI = _baseURI;
-	}
-
-	function setBaseURI(string memory _baseURI) public onlyOwner {
-		baseURI = _baseURI;
-	}
+	constructor() ERC20("Blockchain Registered Avatar", "BCRA") {}
 
 	function setAvatar(string memory avatarHash) public {
 		require(bytes(avatars[msg.sender]).length == 0, "Account already registered");

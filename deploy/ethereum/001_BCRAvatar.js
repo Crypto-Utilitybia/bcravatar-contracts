@@ -1,5 +1,4 @@
 const func = async function (hre) {
-  const baseURI = `https://ipfs.io/ipfs/`;
   const { deployments, getNamedAccounts } = hre;
   const { deploy, read, execute } = deployments;
   const { deployer } = await getNamedAccounts();
@@ -7,7 +6,7 @@ const func = async function (hre) {
   await deploy("BCRAvatar", {
     from: deployer,
     log: true,
-    args: [baseURI],
+    args: [],
   });
 
   const hasAvatar = await read("BCRAvatar", "getAvatar", deployer);

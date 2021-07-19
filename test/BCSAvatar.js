@@ -17,10 +17,10 @@ describe("BCRAvatar", function () {
   });
 
   it("Contract Deploy", async function () {
-    const { deployer, baseURI } = info;
+    const { deployer } = info;
 
     const BCRAvatar = await ethers.getContractFactory("BCRAvatar");
-    const contract = await BCRAvatar.deploy(baseURI);
+    const contract = await BCRAvatar.deploy();
     info.contract = contract;
 
     expect(await contract.name()).to.equal("Blockchain Registered Avatar");
