@@ -4,19 +4,22 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
+import "@openzeppelin/contracts/token/ERC1155/extensions/IERC1155MetadataURI.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract BCRAvatar is Ownable, ERC20 {
 	struct AvatarNFT {
 		address _contract;
 		uint256 tokenId;
+		bool isERC721;
 	}
 
 	event AvatarCreated(address indexed account, string avatarURI);
 	event AvatarUpdated(address indexed account, string avatarURI);
 	event ProfileCreated(address indexed account, string profileURI);
 	event ProfileUpdated(address indexed account, string profileURI);
-	event NFTRegistered(address indexed account, AvatarNFT nft);
+	event NFTRegistered(address indexed account);
+	event NFTDeRegistered(address indexed account);
 	event ServiceDonated(address indexed account, uint256 amount);
 
 	string public baseURI;
@@ -44,8 +47,14 @@ contract BCRAvatar is Ownable, ERC20 {
 		if (avatarNFTs[account]._contract != address(0)) {
 			address _contract = avatarNFTs[account]._contract;
 			uint256 tokenId = avatarNFTs[account].tokenId;
-			if (IERC721(_contract).ownerOf(tokenId) == account) {
-				return IERC721Metadata(_contract).tokenURI(tokenId);
+			if (avatarNFTs[account].isERC721) {
+				if (IERC721(_contract).ownerOf(tokenId) == account) {
+					return IERC721Metadata(_contract).tokenURI(tokenId);
+				}
+			} else {
+				if (IERC1155(_contract).balanceOf(account, tokenId) > 0) {
+					return IERC1155MetadataURI(_contract).uri(tokenId);
+				}
 			}
 		}
 		if (bytes(avatars[account]).length > 0) {
@@ -81,10 +90,24 @@ contract BCRAvatar is Ownable, ERC20 {
 		emit ProfileUpdated(msg.sender, getProfile(msg.sender));
 	}
 
-	function registerNFT(address _contract, uint256 tokenId) public {
-		require(IERC721(_contract).ownerOf(tokenId) == msg.sender, "Owner invalid");
-		avatarNFTs[msg.sender] = AvatarNFT(_contract, tokenId);
-		emit NFTRegistered(msg.sender, avatarNFTs[msg.sender]);
+	function registerNFT(
+		address _contract,
+		uint256 tokenId,
+		bool isERC721
+	) public {
+		if (isERC721) {
+			require(IERC721(_contract).ownerOf(tokenId) == msg.sender, "Owner invalid");
+		} else {
+			require(IERC1155(_contract).balanceOf(msg.sender, tokenId) > 0, "Balance insufficient");
+		}
+		avatarNFTs[msg.sender] = AvatarNFT(_contract, tokenId, isERC721);
+		emit NFTRegistered(msg.sender);
+	}
+
+	function deRegisterNFT() public {
+		require(avatarNFTs[msg.sender]._contract != address(0), "NFT not registered");
+		delete avatarNFTs[msg.sender];
+		emit NFTDeRegistered(msg.sender);
 	}
 
 	function donate() public payable {
