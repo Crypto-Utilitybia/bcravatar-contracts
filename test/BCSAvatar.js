@@ -13,7 +13,9 @@ describe("BCRAvatar", function () {
     info.investor = namedAccounts.investor;
     info.investorSigner = await ethers.provider.getSigner(info.investor);
     info.avatarId = Date.now().toString();
-    info.profileId = (Date.now() + 1).toString();
+    info.avatarIdNew = (Date.now() + 1).toString();
+    info.profileId = (Date.now() + 2).toString();
+    info.profileIdNew = (Date.now() + 3).toString();
   });
 
   it("Contract Deploy", async function () {
@@ -29,8 +31,8 @@ describe("BCRAvatar", function () {
     expect(await contract.owner()).to.equal(deployer);
   });
 
-  it("setAvatar && getAvatar", async function () {
-    const { contract, deployer, avatarId } = info;
+  it("Set Avatar", async function () {
+    const { contract, deployer, avatarId, avatarIdNew } = info;
     expect(await contract.getAvatar(deployer)).to.equal("");
     await expect(contract.setAvatar(avatarId)).to.be.emit(
       contract,
@@ -39,24 +41,7 @@ describe("BCRAvatar", function () {
     expect(await contract.getAvatar(deployer)).to.equal(
       `${info.baseURI}${avatarId.toString()}`
     );
-    await expect(contract.setAvatar(avatarId)).to.be.revertedWith(
-      "Account already registered"
-    );
-  });
-
-  it("updateAvatar", async function () {
-    info.avatarIdNew = Date.now().toString();
-    const {
-      contract,
-      deployer,
-      investorSigner: signer,
-      avatarId,
-      avatarIdNew,
-    } = info;
-    await expect(
-      contract.connect(signer).updateAvatar(avatarId)
-    ).to.be.revertedWith("Account not registered");
-    await expect(contract.updateAvatar(avatarIdNew)).to.be.emit(
+    await expect(contract.setAvatar(avatarIdNew)).to.be.emit(
       contract,
       "AvatarUpdated"
     );
@@ -65,8 +50,8 @@ describe("BCRAvatar", function () {
     );
   });
 
-  it("setProfile && getProfile", async function () {
-    const { contract, deployer, profileId } = info;
+  it("Set Profile", async function () {
+    const { contract, deployer, profileId, profileIdNew } = info;
     expect(await contract.getProfile(deployer)).to.equal("");
     await expect(contract.setProfile(profileId)).to.be.emit(
       contract,
@@ -75,24 +60,7 @@ describe("BCRAvatar", function () {
     expect(await contract.getProfile(deployer)).to.equal(
       `${info.baseURI}${profileId.toString()}`
     );
-    await expect(contract.setProfile(profileId)).to.be.revertedWith(
-      "Account already registered"
-    );
-  });
-
-  it("updateProfile", async function () {
-    info.profileIdNew = Date.now().toString();
-    const {
-      contract,
-      deployer,
-      investorSigner: signer,
-      profileId,
-      profileIdNew,
-    } = info;
-    await expect(
-      contract.connect(signer).updateProfile(profileId)
-    ).to.be.revertedWith("Account not registered");
-    await expect(contract.updateProfile(profileIdNew)).to.be.emit(
+    await expect(contract.setProfile(profileIdNew)).to.be.emit(
       contract,
       "ProfileUpdated"
     );
@@ -101,7 +69,7 @@ describe("BCRAvatar", function () {
     );
   });
 
-  it("registerERC721 && getAvatar", async function () {
+  it("Register NFT(ERC721)", async function () {
     info.avatarNFT = `${info.baseURI}${Date.now()}`;
     const {
       contract,
@@ -112,28 +80,29 @@ describe("BCRAvatar", function () {
     } = info;
 
     const MockERC721 = await ethers.getContractFactory("MockERC721");
-    const mockNFT = await MockERC721.deploy();
-    await mockNFT.mint(avatarNFT);
-    await mockNFT.mint(avatarNFT);
+    const mockERC721 = await MockERC721.deploy();
+    await mockERC721.mint(avatarNFT);
+    await mockERC721.mint(avatarNFT);
+    info.mockERC721 = mockERC721;
 
-    await expect(contract.registerNFT(mockNFT.address, 1, false)).to.be
+    await expect(contract.registerNFT(mockERC721.address, 1, false)).to.be
       .reverted;
     await expect(
-      contract.connect(signer).registerNFT(mockNFT.address, 1, true)
+      contract.connect(signer).registerNFT(mockERC721.address, 1, true)
     ).to.be.revertedWith("Owner invalid");
 
-    await expect(contract.registerNFT(mockNFT.address, 1, true)).to.be.emit(
+    await expect(contract.registerNFT(mockERC721.address, 1, true)).to.be.emit(
       contract,
       "NFTRegistered"
     );
     expect(await contract.getAvatar(deployer)).to.equal(avatarNFT);
-    await mockNFT.transferFrom(deployer, info.investor, 1);
+    await mockERC721.transferFrom(deployer, info.investor, 1);
     expect(await contract.getAvatar(deployer)).to.equal(
       `${info.baseURI}${avatarIdNew.toString()}`
     );
   });
 
-  it("registerERC1155 && getAvatar", async function () {
+  it("Register NFT(ERC1155)", async function () {
     info.avatarNFT = `${info.baseURI}${Date.now()}/{id}.json`;
     const {
       contract,
@@ -144,50 +113,107 @@ describe("BCRAvatar", function () {
     } = info;
 
     const MockERC1155 = await ethers.getContractFactory("MockERC1155");
-    const mockNFT = await MockERC1155.deploy(avatarNFT);
-    info.mockNFT = mockNFT;
+    const mockERC1155 = await MockERC1155.deploy(avatarNFT);
+    info.mockERC1155 = mockERC1155;
 
-    await expect(contract.registerNFT(mockNFT.address, 1, true)).to.be.reverted;
+    await expect(contract.registerNFT(mockERC1155.address, 1, true)).to.be
+      .reverted;
     await expect(
-      contract.connect(signer).registerNFT(mockNFT.address, 1, false)
+      contract.connect(signer).registerNFT(mockERC1155.address, 1, false)
     ).to.be.revertedWith("Balance insufficient");
 
-    await expect(contract.registerNFT(mockNFT.address, 1, false)).to.be.emit(
-      contract,
-      "NFTRegistered"
-    );
+    await expect(
+      contract.registerNFT(mockERC1155.address, 1, false)
+    ).to.be.emit(contract, "NFTRegistered");
     expect(await contract.getAvatar(deployer)).to.equal(avatarNFT);
-    await mockNFT.safeTransferFrom(deployer, info.investor, 1, 99, "0x00");
+    await mockERC1155.safeTransferFrom(deployer, info.investor, 1, 99, "0x00");
     expect(await contract.getAvatar(deployer)).to.equal(avatarNFT);
-    await mockNFT.safeTransferFrom(deployer, info.investor, 1, 1, "0x00");
+    await mockERC1155.safeTransferFrom(deployer, info.investor, 1, 1, "0x00");
     expect(await contract.getAvatar(deployer)).to.equal(
       `${info.baseURI}${avatarIdNew.toString()}`
     );
   });
 
-  it("deRegisterNFT && getAvatar", async function () {
+  it("DeRegister NFT", async function () {
     const {
       contract,
       deployer,
       investorSigner: signer,
       avatarIdNew,
-      mockNFT,
+      mockERC1155,
       avatarNFT,
     } = info;
 
     await expect(contract.connect(signer).deRegisterNFT()).to.be.revertedWith(
       "NFT not registered"
     );
-    await expect(contract.registerNFT(mockNFT.address, 2, false)).to.be.emit(
-      contract,
-      "NFTRegistered"
-    );
+    await expect(
+      contract.registerNFT(mockERC1155.address, 2, false)
+    ).to.be.emit(contract, "NFTRegistered");
     expect(await contract.getAvatar(deployer)).to.equal(avatarNFT);
     await expect(contract.deRegisterNFT()).to.be.emit(
       contract,
       "NFTDeRegistered"
     );
     expect(await contract.getAvatar(deployer)).to.equal(
+      `${info.baseURI}${avatarIdNew.toString()}`
+    );
+  });
+
+  it("Set Avatar (Contract)", async function () {
+    const {
+      contract,
+      mockERC721,
+      investorSigner: signer,
+      avatarId,
+      avatarIdNew,
+    } = info;
+    expect(await contract.getAvatar(mockERC721.address)).to.equal("");
+    await expect(
+      contract.connect(signer).setContractAvatar(mockERC721.address, avatarId)
+    ).to.be.reverted;
+    await expect(
+      contract.setContractAvatar(mockERC721.address, avatarId)
+    ).to.be.emit(contract, "ContractAvatarCreated");
+    expect(await contract.getAvatar(mockERC721.address)).to.equal(
+      `${info.baseURI}${avatarId.toString()}`
+    );
+    await expect(
+      contract.setContractAvatar(mockERC721.address, avatarIdNew)
+    ).to.be.emit(contract, "ContractAvatarUpdated");
+    expect(await contract.getAvatar(mockERC721.address)).to.equal(
+      `${info.baseURI}${avatarIdNew.toString()}`
+    );
+  });
+
+  it("Set Avatar (Owned Contract)", async function () {
+    const {
+      contract,
+      mockERC1155,
+      investor,
+      investorSigner: signer,
+      avatarId,
+      avatarIdNew,
+    } = info;
+    await mockERC1155.transferOwnership(investor);
+    expect(await contract.getAvatar(mockERC1155.address)).to.equal("");
+    await expect(
+      contract.setOwnableContractAvatar(mockERC1155.address, avatarId)
+    ).to.be.reverted;
+    await expect(
+      contract
+        .connect(signer)
+        .setOwnableContractAvatar(mockERC1155.address, avatarId)
+    ).to.be.emit(contract, "ContractAvatarCreated");
+    expect(await contract.getAvatar(mockERC1155.address)).to.equal(
+      `${info.baseURI}${avatarId.toString()}`
+    );
+    await expect(
+      contract
+        .connect(signer)
+        .setOwnableContractAvatar(mockERC1155.address, avatarIdNew)
+    ).to.be.emit(contract, "ContractAvatarUpdated");
+    expect(await contract.getAvatar(mockERC1155.address)).to.equal(
       `${info.baseURI}${avatarIdNew.toString()}`
     );
   });

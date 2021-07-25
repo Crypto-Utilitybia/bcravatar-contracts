@@ -5,11 +5,12 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
 import "@openzeppelin/contracts/token/ERC1155/extensions/IERC1155MetadataURI.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract BCRAvatar is Ownable, ERC20 {
 	struct AvatarNFT {
-		address _contract;
+		address nft;
 		uint256 tokenId;
 		bool isERC721;
 	}
@@ -20,6 +21,8 @@ contract BCRAvatar is Ownable, ERC20 {
 	event ProfileUpdated(address indexed account, string profileURI);
 	event NFTRegistered(address indexed account);
 	event NFTDeRegistered(address indexed account);
+	event ContractAvatarCreated(address indexed account, string avatarURI);
+	event ContractAvatarUpdated(address indexed account, string avatarURI);
 	event ServiceDonated(address indexed account, uint256 amount);
 
 	string public baseURI = "https://ipfs.io/ipfs/";
@@ -27,26 +30,21 @@ contract BCRAvatar is Ownable, ERC20 {
 	mapping(address => string) private avatars;
 	mapping(address => string) private profiles;
 	mapping(address => AvatarNFT) public avatarNFTs;
+	mapping(address => bool) public contracts;
 
 	constructor() ERC20("Blockchain Registered Avatar", "BCRA") {}
 
-	function setAvatar(string memory avatarHash) public {
-		require(bytes(avatars[msg.sender]).length == 0, "Account already registered");
-		avatars[msg.sender] = avatarHash;
-		emit AvatarCreated(msg.sender, getAvatar(msg.sender));
-	}
-
 	function getAvatar(address account) public view returns (string memory) {
-		if (avatarNFTs[account]._contract != address(0)) {
-			address _contract = avatarNFTs[account]._contract;
+		if (avatarNFTs[account].nft != address(0)) {
+			address nft = avatarNFTs[account].nft;
 			uint256 tokenId = avatarNFTs[account].tokenId;
 			if (avatarNFTs[account].isERC721) {
-				if (IERC721(_contract).ownerOf(tokenId) == account) {
-					return IERC721Metadata(_contract).tokenURI(tokenId);
+				if (IERC721(nft).ownerOf(tokenId) == account) {
+					return IERC721Metadata(nft).tokenURI(tokenId);
 				}
 			} else {
-				if (IERC1155(_contract).balanceOf(account, tokenId) > 0) {
-					return IERC1155MetadataURI(_contract).uri(tokenId);
+				if (IERC1155(nft).balanceOf(account, tokenId) > 0) {
+					return IERC1155MetadataURI(nft).uri(tokenId);
 				}
 			}
 		}
@@ -57,16 +55,14 @@ contract BCRAvatar is Ownable, ERC20 {
 		}
 	}
 
-	function updateAvatar(string memory avatarHash) public {
-		require(bytes(avatars[msg.sender]).length != 0, "Account not registered");
+	function setAvatar(string memory avatarHash) public {
+		bool noteCreated = bytes(avatars[msg.sender]).length == 0;
 		avatars[msg.sender] = avatarHash;
-		emit AvatarUpdated(msg.sender, getAvatar(msg.sender));
-	}
-
-	function setProfile(string memory profileHash) public {
-		require(bytes(profiles[msg.sender]).length == 0, "Account already registered");
-		profiles[msg.sender] = profileHash;
-		emit ProfileCreated(msg.sender, getProfile(msg.sender));
+		if (noteCreated) {
+			emit AvatarCreated(msg.sender, getAvatar(msg.sender));
+		} else {
+			emit AvatarUpdated(msg.sender, getAvatar(msg.sender));
+		}
 	}
 
 	function getProfile(address account) public view returns (string memory) {
@@ -77,30 +73,58 @@ contract BCRAvatar is Ownable, ERC20 {
 		}
 	}
 
-	function updateProfile(string memory profileHash) public {
-		require(bytes(profiles[msg.sender]).length != 0, "Account not registered");
+	function setProfile(string memory profileHash) public {
+		bool noteCreated = bytes(profiles[msg.sender]).length == 0;
 		profiles[msg.sender] = profileHash;
-		emit ProfileUpdated(msg.sender, getProfile(msg.sender));
+		if (noteCreated) {
+			emit ProfileCreated(msg.sender, getProfile(msg.sender));
+		} else {
+			emit ProfileUpdated(msg.sender, getProfile(msg.sender));
+		}
 	}
 
 	function registerNFT(
-		address _contract,
+		address nft,
 		uint256 tokenId,
 		bool isERC721
 	) public {
 		if (isERC721) {
-			require(IERC721(_contract).ownerOf(tokenId) == msg.sender, "Owner invalid");
+			require(IERC721(nft).ownerOf(tokenId) == msg.sender, "Owner invalid");
 		} else {
-			require(IERC1155(_contract).balanceOf(msg.sender, tokenId) > 0, "Balance insufficient");
+			require(IERC1155(nft).balanceOf(msg.sender, tokenId) > 0, "Balance insufficient");
 		}
-		avatarNFTs[msg.sender] = AvatarNFT(_contract, tokenId, isERC721);
+		avatarNFTs[msg.sender] = AvatarNFT(nft, tokenId, isERC721);
 		emit NFTRegistered(msg.sender);
 	}
 
 	function deRegisterNFT() public {
-		require(avatarNFTs[msg.sender]._contract != address(0), "NFT not registered");
+		require(avatarNFTs[msg.sender].nft != address(0), "NFT not registered");
 		delete avatarNFTs[msg.sender];
 		emit NFTDeRegistered(msg.sender);
+	}
+
+	function setContractAvatar(address account, string memory avatarHash) public onlyOwner {
+		require(Address.isContract(account), "Contract invalid");
+		bool noteCreated = bytes(avatars[account]).length == 0;
+		avatars[account] = avatarHash;
+		contracts[account] = true;
+		if (noteCreated) {
+			emit ContractAvatarCreated(account, getAvatar(account));
+		} else {
+			emit ContractAvatarUpdated(account, getAvatar(account));
+		}
+	}
+
+	function setOwnableContractAvatar(address account, string memory avatarHash) public {
+		require(Ownable(account).owner() == msg.sender, "Owner invalid");
+		bool noteCreated = bytes(avatars[account]).length == 0;
+		avatars[account] = avatarHash;
+		contracts[account] = true;
+		if (noteCreated) {
+			emit ContractAvatarCreated(account, getAvatar(account));
+		} else {
+			emit ContractAvatarUpdated(account, getAvatar(account));
+		}
 	}
 
 	function donate() public payable {

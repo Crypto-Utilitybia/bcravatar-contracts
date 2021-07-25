@@ -4,8 +4,8 @@
   "description": "Blockchain Registered Avatar",
   "main": "index.js",
   "scripts": {
-    "build": "rm -rf abi && hardhat compile && cp -rf deployments/mainnet/*.* ../bcravatar-dapp/libibrary/abi/",
-    "build:rinkeby": "rm -rf abi && hardhat compile && cp -rf deployments/rinkeby/*.* ../bcravatar-dapp/libibrary/abi/",
+    "build": "rm -rf abi && hardhat compile && cp -rf deployments/mainnet/*.* ../bcravatar-dapp/library/abi/ && cp -rf abi ../bcravatar-subgraph/bcravatar-mainnet/abis",
+    "build:rinkeby": "rm -rf abi && hardhat compile && cp -rf deployments/rinkeby/*.* ../bcravatar-dapp/library/abi/ && cp -rf abi/*.* ../bcravatar-subgraph/bcravatar-rinkeby/abis",
     "console": "hardhat console",
     "test": "rm -rf abi && hardhat test --show-stack-traces --network hardhat",
     "test:coverage": "rm -rf abi && node --max-old-space-size=4096 ./node_modules/.bin/hardhat coverage --network hardhat",
