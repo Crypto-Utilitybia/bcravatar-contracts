@@ -85,7 +85,7 @@ module.exports = {
     clear: true,
     flat: true,
     spacing: 2,
-    only: ["BCRAvatar"],
+    only: ["BCRAvatar", "IERC721", "IERC1155"],
   },
   mocha: {
     timeout: 0,
