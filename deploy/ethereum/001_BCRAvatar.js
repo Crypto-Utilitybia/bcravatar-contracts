@@ -3,7 +3,7 @@ const func = async function (hre) {
   const { deploy, read, execute } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  await deploy("BCRAvatar", {
+  const contract = await deploy("BCRAvatar", {
     from: deployer,
     log: true,
     args: [],
@@ -31,6 +31,19 @@ const func = async function (hre) {
     );
   } else {
     console.log(`Profile: ${hasProfile}`);
+  }
+
+  const hasContractAvatar = await read("BCRAvatar", "getAvatar", contract.address);
+  if (!hasContractAvatar) {
+    await execute(
+      "BCRAvatar",
+      { from: deployer, log: true },
+      "setContractAvatar",
+      contract.address,
+      process.env.AVATAR_ID
+    );
+  } else {
+    console.log(`Contract Avatar: ${hasContractAvatar}`);
   }
 };
 
