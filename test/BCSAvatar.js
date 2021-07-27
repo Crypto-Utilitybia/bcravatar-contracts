@@ -218,6 +218,63 @@ describe("BCRAvatar", function () {
     );
   });
 
+  it("Set Profile (Contract)", async function () {
+    const {
+      contract,
+      mockERC721,
+      investorSigner: signer,
+      profileId,
+      profileIdNew,
+    } = info;
+    expect(await contract.getProfile(mockERC721.address)).to.equal("");
+    await expect(
+      contract.connect(signer).setContractProfile(mockERC721.address, profileId)
+    ).to.be.reverted;
+    await expect(
+      contract.setContractProfile(mockERC721.address, profileId)
+    ).to.be.emit(contract, "ContractProfileCreated");
+    expect(await contract.getProfile(mockERC721.address)).to.equal(
+      `${info.baseURI}${profileId.toString()}`
+    );
+    await expect(
+      contract.setContractProfile(mockERC721.address, profileIdNew)
+    ).to.be.emit(contract, "ContractProfileUpdated");
+    expect(await contract.getProfile(mockERC721.address)).to.equal(
+      `${info.baseURI}${profileIdNew.toString()}`
+    );
+  });
+
+  it("Set Profile (Owned Contract)", async function () {
+    const {
+      contract,
+      mockERC1155,
+      investor,
+      investorSigner: signer,
+      profileId,
+      profileIdNew,
+    } = info;
+    expect(await contract.getProfile(mockERC1155.address)).to.equal("");
+    await expect(
+      contract.setOwnableContractProfile(mockERC1155.address, profileId)
+    ).to.be.reverted;
+    await expect(
+      contract
+        .connect(signer)
+        .setOwnableContractProfile(mockERC1155.address, profileId)
+    ).to.be.emit(contract, "ContractProfileCreated");
+    expect(await contract.getProfile(mockERC1155.address)).to.equal(
+      `${info.baseURI}${profileId.toString()}`
+    );
+    await expect(
+      contract
+        .connect(signer)
+        .setOwnableContractProfile(mockERC1155.address, profileIdNew)
+    ).to.be.emit(contract, "ContractProfileUpdated");
+    expect(await contract.getProfile(mockERC1155.address)).to.equal(
+      `${info.baseURI}${profileIdNew.toString()}`
+    );
+  });
+
   it("donate && withdraw", async function () {
     const { contract, investorSigner: signer, investor } = info;
     await expect(

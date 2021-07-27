@@ -23,6 +23,8 @@ contract BCRAvatar is Ownable, ERC20 {
 	event NFTDeRegistered(address indexed account);
 	event ContractAvatarCreated(address indexed account, string avatarURI);
 	event ContractAvatarUpdated(address indexed account, string avatarURI);
+	event ContractProfileCreated(address indexed account, string profileURI);
+	event ContractProfileUpdated(address indexed account, string profileURI);
 	event ServiceDonated(address indexed account, uint256 amount);
 
 	string public baseURI = "https://ipfs.io/ipfs/";
@@ -56,9 +58,9 @@ contract BCRAvatar is Ownable, ERC20 {
 	}
 
 	function setAvatar(string memory avatarHash) public {
-		bool noteCreated = bytes(avatars[msg.sender]).length == 0;
+		bool notCreated = bytes(avatars[msg.sender]).length == 0;
 		avatars[msg.sender] = avatarHash;
-		if (noteCreated) {
+		if (notCreated) {
 			emit AvatarCreated(msg.sender, getAvatar(msg.sender));
 		} else {
 			emit AvatarUpdated(msg.sender, getAvatar(msg.sender));
@@ -74,9 +76,9 @@ contract BCRAvatar is Ownable, ERC20 {
 	}
 
 	function setProfile(string memory profileHash) public {
-		bool noteCreated = bytes(profiles[msg.sender]).length == 0;
+		bool notCreated = bytes(profiles[msg.sender]).length == 0;
 		profiles[msg.sender] = profileHash;
-		if (noteCreated) {
+		if (notCreated) {
 			emit ProfileCreated(msg.sender, getProfile(msg.sender));
 		} else {
 			emit ProfileUpdated(msg.sender, getProfile(msg.sender));
@@ -105,10 +107,10 @@ contract BCRAvatar is Ownable, ERC20 {
 
 	function setContractAvatar(address account, string memory avatarHash) public onlyOwner {
 		require(Address.isContract(account), "Contract invalid");
-		bool noteCreated = bytes(avatars[account]).length == 0;
+		bool notCreated = bytes(avatars[account]).length == 0;
 		avatars[account] = avatarHash;
-		contracts[account] = true;
-		if (noteCreated) {
+		if (notCreated) {
+			contracts[account] = true;
 			emit ContractAvatarCreated(account, getAvatar(account));
 		} else {
 			emit ContractAvatarUpdated(account, getAvatar(account));
@@ -117,13 +119,37 @@ contract BCRAvatar is Ownable, ERC20 {
 
 	function setOwnableContractAvatar(address account, string memory avatarHash) public {
 		require(Ownable(account).owner() == msg.sender, "Owner invalid");
-		bool noteCreated = bytes(avatars[account]).length == 0;
+		bool notCreated = bytes(avatars[account]).length == 0;
 		avatars[account] = avatarHash;
-		contracts[account] = true;
-		if (noteCreated) {
+		if (notCreated) {
+			contracts[account] = true;
 			emit ContractAvatarCreated(account, getAvatar(account));
 		} else {
 			emit ContractAvatarUpdated(account, getAvatar(account));
+		}
+	}
+
+	function setContractProfile(address account, string memory profileHash) public onlyOwner {
+		require(Address.isContract(account), "Contract invalid");
+		bool notCreated = bytes(profiles[account]).length == 0;
+		profiles[account] = profileHash;
+		if (notCreated) {
+			contracts[account] = true;
+			emit ContractProfileCreated(account, getProfile(account));
+		} else {
+			emit ContractProfileUpdated(account, getProfile(account));
+		}
+	}
+
+	function setOwnableContractProfile(address account, string memory profileHash) public {
+		require(Ownable(account).owner() == msg.sender, "Owner invalid");
+		bool notCreated = bytes(profiles[account]).length == 0;
+		profiles[account] = profileHash;
+		if (notCreated) {
+			contracts[account] = true;
+			emit ContractProfileCreated(account, getProfile(account));
+		} else {
+			emit ContractProfileUpdated(account, getProfile(account));
 		}
 	}
 
