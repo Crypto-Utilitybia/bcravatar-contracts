@@ -6,6 +6,8 @@
   "scripts": {
     "build": "rm -rf abi && hardhat compile && cp -rf abi/*.* ../bcravatar-dapp/library/abi/ && cp -rf abi/*.* ../bcravatar-subgraph/bcravatar-mainnet/abis",
     "build:rinkeby": "rm -rf abi && hardhat compile && cp -rf abi/*.* ../bcravatar-dapp/library/abi/ && cp -rf abi/*.* ../bcravatar-subgraph/bcravatar-rinkeby/abis",
+    "build:matic": "rm -rf abi && hardhat compile && cp -rf abi/*.* ../bcravatar-dapp/library/abi/ && cp -rf abi/*.* ../bcravatar-subgraph/bcravatar-matic/abis",
+    "build:bsc": "rm -rf abi && hardhat compile && cp -rf abi/*.* ../bcravatar-dapp/library/abi/ && cp -rf abi/*.* ../bcravatar-subgraph/bcravatar-bsc/abis",
     "console": "hardhat console",
     "test": "rm -rf abi && hardhat test --show-stack-traces --network hardhat",
     "test:coverage": "rm -rf abi && node --max-old-space-size=4096 ./node_modules/.bin/hardhat coverage --network hardhat",
@@ -15,10 +17,10 @@
     "mainnet:verify": "hardhat --network mainnet etherscan-verify",
     "rinkeby:deploy": "rm -rf abi && npx hardhat deploy --network rinkeby",
     "rinkeby:verify": "hardhat --network rinkeby etherscan-verify",
-    "binance:deploy": "rm -rf abi && npx hardhat deploy --network binance",
-    "binance:verify": "hardhat --network binance etherscan-verify",
     "matic:deploy": "rm -rf abi && npx hardhat deploy --network matic",
-    "matic:verify": "hardhat --network matic etherscan-verify"
+    "matic:verify": "hardhat --network matic etherscan-verify",
+    "bsc:deploy": "rm -rf abi && npx hardhat deploy --network bsc",
+    "bsc:verify": "hardhat --network bsc etherscan-verify"
   },
   "repository": {
     "type": "git",
